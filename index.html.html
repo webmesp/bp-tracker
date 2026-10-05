@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Pressure Log</title>
+<style>
+  :root {
+    --bg: #F5F7F6;
+    --ink: #1A2E2C;
+    --sub: #6F7B75;
+    --sub2: #8A9088;
+    --line: #E7E3DA;
+    --accent: #3D7068;
+    --card: #FFFFFF;
+    --green: #4C9A6A;
+    --yellow: #D6B234;
+    --orange: #D97C2B;
+    --red: #B5352F;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; padding: 0; background: var(--bg); }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", sans-serif;
+    color: var(--ink);
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  #app { max-width: 480px; margin: 0 auto; min-height: 100vh; padding-bottom: 100px; position: relative; }
+
+  header.top { padding: 24px 20px 8px; }
+  .eyebrow { font-size: 13px; color: var(--sub); margin-bottom: 2px; }
+  h1 { font-size: 28px; font-weight: 700; margin: 0; letter-spacing: -0.02em; }
+
+  .hero { margin: 12px 20px; background: var(--ink); border-radius: 20px; padding: 20px 22px; color: var(--bg); }
+  .hero-top { display: flex; justify-content: space-between; align-items: flex-start; }
+  .hero-num { font-size: 44px; font-weight: 700; line-height: 1; letter-spacing: -0.02em; }
+  .hero-num .slash { color: #8A9088; font-weight: 400; }
+  .hero-sub { font-size: 13px; color: #AEB8B1; margin-top: 6px; }
+  .hero-note { font-size: 12px; color: #C7CFC9; margin-top: 6px; font-style: italic; }
+  .pill { color: #fff; padding: 6px 14px; border-radius: 14px; text-align: center; }
+  .pill .lab { font-size: 13px; font-weight: 700; }
+  .pill .sub { font-size: 10px; opacity: 0.85; margin-top: 1px; }
+  .hero-foot { display: flex; justify-content: space-between; align-items: center; margin-top: 18px; font-size: 12px; color: #AEB8B1; }
+  .dots { display: flex; gap: 5px; }
+  .dot { width: 6px; height: 6px; border-radius: 3px; background: #DDE3DF; }
+  .dot.on { background: var(--accent); }
+
+  .empty-hero { margin: 12px 20px; background: #EDEFE9; border-radius: 20px; padding: 28px 22px; text-align: center; color: var(--sub); font-size: 14px; }
+
+  .tabs { display: flex; margin: 4px 20px 0; background: #EDEFE9; border-radius: 12px; padding: 3px; gap: 3px; }
+  .tab { flex: 1; border: none; background: transparent; padding: 9px 0; font-size: 13px; font-weight: 600; color: var(--sub); border-radius: 9px; cursor: pointer; }
+  .tab.active { background: #fff; color: var(--ink); box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+
+  main { padding: 16px 20px 0; }
+  .empty-state { color: var(--sub); font-size: 14px; text-align: center; padding: 32px 12px; }
+
+  .day-group { margin-bottom: 18px; }
+  .day-label { font-size: 13px; font-weight: 600; color: var(--sub); margin-bottom: 8px; display: flex; align-items: center; justify-content: space-between; cursor: pointer; padding: 4px 2px; }
+  .count-badge { color: var(--sub2); font-weight: 400; }
+  .chevron { color: var(--sub2); font-size: 10px; }
+  .row { display: flex; align-items: center; background: #fff; border-radius: 14px; padding: 12px 14px; margin-bottom: 8px; box-shadow: 0 1px 2px rgba(0,0,0,0.04); }
+  .row-dot { width: 8px; height: 8px; border-radius: 4px; margin-right: 12px; flex-shrink: 0; }
+  .row-info { flex: 1; min-width: 0; }
+  .row-main { display: flex; align-items: baseline; gap: 8px; }
+  .row-nums { font-size: 17px; font-weight: 700; }
+  .row-slot { font-size: 12px; color: var(--sub); }
+  .row-meta { font-size: 12px; color: var(--sub2); margin-top: 2px; }
+  .row-note { font-size: 12px; color: var(--sub); margin-top: 3px; font-style: italic; overflow-wrap: break-word; }
+  .del-btn { border: none; background: transparent; color: #C4C9C4; font-size: 14px; cursor: pointer; padding: 6px; }
+
+  .range-row { display: flex; gap: 8px; margin-bottom: 14px; }
+  .range-btn { border: 1px solid var(--line); background: #fff; border-radius: 100px; padding: 6px 14px; font-size: 13px; color: var(--sub); cursor: pointer; }
+  .range-btn.active { background: var(--ink); border-color: var(--ink); color: #fff; }
+
+  .stats-grid { display: flex; gap: 10px; margin-bottom: 14px; flex-wrap: wrap; }
+  .stat-card { flex: 1; min-width: 100px; background: #fff; border-radius: 14px; padding: 14px 16px; }
+  .stat-label { font-size: 12px; color: var(--sub); }
+  .stat-value { font-size: 26px; font-weight: 700; margin-top: 2px; }
+  .stat-trend { font-size: 12px; font-weight: 600; margin-top: 4px; }
+
+  .chart-card { background: #fff; border-radius: 16px; padding: 14px 10px 6px; margin-bottom: 14px; }
+  .legend { display: flex; gap: 16px; justify-content: center; padding-bottom: 8px; padding-top: 4px; flex-wrap: wrap; }
+  .legend-item { font-size: 12px; color: var(--sub); display: flex; align-items: center; gap: 6px; }
+  .legend-dot { width: 8px; height: 8px; border-radius: 4px; display: inline-block; }
+  .note-card { font-size: 12px; color: var(--sub2); line-height: 1.5; padding: 0 4px 16px; }
+
+  .settings-card { background: #fff; border-radius: 16px; padding: 18px; }
+  .setting-label { font-size: 14px; font-weight: 600; margin-top: 14px; }
+  .setting-hint { font-size: 12px; color: var(--sub); margin-top: 4px; line-height: 1.5; }
+  .stepper { display: flex; align-items: center; gap: 18px; margin-top: 12px; }
+  .stepper-btn { width: 36px; height: 36px; border-radius: 10px; border: 1px solid var(--line); background: var(--bg); font-size: 18px; cursor: pointer; }
+  .stepper-val { font-size: 20px; font-weight: 700; min-width: 20px; text-align: center; }
+  .settings-actions { display: flex; gap: 10px; margin-top: 10px; flex-wrap: wrap; }
+  .btn-secondary { border: 1px solid var(--line); background: var(--bg); color: var(--ink); font-size: 13px; font-weight: 600; padding: 9px 14px; border-radius: 10px; cursor: pointer; }
+  .btn-danger { border: 1px solid #EFD3CE; background: #FBEDEA; color: var(--red); font-size: 13px; font-weight: 600; padding: 9px 14px; border-radius: 10px; cursor: pointer; }
+
+  .fab { position: fixed; bottom: calc(24px + env(safe-area-inset-bottom)); left: 50%; transform: translateX(-50%); width: 56px; height: 56px; border-radius: 28px; border: none; background: var(--accent); color: #fff; font-size: 28px; line-height: 56px; text-align: center; box-shadow: 0 4px 14px rgba(61,112,104,0.4); cursor: pointer; max-width: 480px; }
+
+  .overlay { position: fixed; inset: 0; background: rgba(26,46,44,0.4); display: none; align-items: flex-end; justify-content: center; z-index: 50; }
+  .overlay.show { display: flex; }
+  .sheet { background: #fff; width: 100%; max-width: 480px; border-radius: 24px 24px 0 0; padding: 10px 20px calc(28px + env(safe-area-inset-bottom)); }
+  .sheet-handle { width: 36px; height: 4px; border-radius: 2px; background: var(--line); margin: 4px auto 14px; }
+  .sheet-title { font-size: 18px; font-weight: 700; margin-bottom: 16px; }
+  .form-row { display: flex; gap: 10px; margin-bottom: 4px; }
+  .form-field { flex: 1; }
+  .form-label { font-size: 12px; color: var(--sub); display: block; margin-bottom: 6px; margin-top: 12px; }
+  .form-input { width: 100%; border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; font-size: 16px; background: var(--bg); font-family: inherit; color: var(--ink); }
+  .slot-row { display: flex; gap: 8px; flex-wrap: wrap; }
+  .slot-btn { border: 1px solid var(--line); background: var(--bg); border-radius: 100px; padding: 7px 14px; font-size: 13px; color: var(--sub); cursor: pointer; }
+  .slot-btn.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .save-btn { width: 100%; margin-top: 20px; border: none; background: var(--accent); color: #fff; font-size: 16px; font-weight: 600; padding: 14px 0; border-radius: 12px; cursor: pointer; }
+  .cancel-btn { width: 100%; margin-top: 8px; border: none; background: transparent; color: var(--sub2); font-size: 14px; padding: 8px 0; cursor: pointer; }
+
+  .error-banner { position: fixed; bottom: 90px; left: 20px; right: 20px; max-width: 440px; margin: 0 auto; background: var(--red); color: #fff; font-size: 13px; padding: 10px 14px; border-radius: 10px; text-align: center; display: none; }
+  .error-banner.show { display: block; }
+</style>
+</head>
+<body>
+<div id="app"></div>
+
+<script>
+(function () {
+  var STORAGE_KEY = 'bp_readings_v1';
+  var TARGET_KEY = 'bp_target_v1';
+  var SLOTS = ['Morning', 'Midday', 'Evening', 'Night'];
+
+  var state = {
+    readings: JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'),
+    target: parseInt(localStorage.getItem(TARGET_KEY) || '4', 10),
+    view: 'log',
+    range: 14,
+    groupMode: 'day',
+    expandedGroups: {},
+    showForm: false,
+    form: { systolic: '', diastolic: '', pulse: '', slot: 'Morning', note: '' },
+    error: ''
+  };
+
+  function save() {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state.readings));
+  }
+  function saveTarget() {
+    localStorage.setItem(TARGET_KEY, String(state.target));
+  }
+
+  function categorize(sys, dia) {
+    if (sys >= 180 || dia >= 120) return { label: 'Red', sub: 'Very high', color: 'var(--red)' };
+    if (sys >= 140 || dia >= 90) return { label: 'Orange', sub: 'High', color: 'var(--orange)' };
+    if (sys >= 130 || dia >= 85) return { label: 'Yellow', sub: 'Elevated', color: 'var(--yellow)' };
+    return { label: 'Green', sub: 'Good', color: 'var(--green)' };
+  }
+
+  function fmtDate(ts) {
+    var d = new Date(ts);
+    return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+  }
+  function fmtTime(ts) {
+    var d = new Date(ts);
+    return d.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
+  }
+  function esc(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+  function slope(values) {
+    var n = values.length;
+    if (n < 2) return 0;
+    var xMean = (n - 1) / 2;
+    var yMean = values.reduce(function (a, b) { return a + b; }, 0) / n;
+    var num = 0, den = 0;
+    for (var i = 0; i < n; i++) {
+      num += (i - xMean) * (values[i] - yMean);
+      den += (i - xMean) * (i - xMean);
+    }
+    return den === 0 ? 0 : num / den;
+  }
+  function trendVerdict(perWeek) {
+    if (Math.abs(perWeek) < 0.5) return { text: 'holding steady', color: 'var(--sub)' };
+    if (perWeek < 0) return { text: 'trending down ~' + Math.abs(perWeek).toFixed(1) + '/wk', color: 'var(--green)' };
+    return { text: 'trending up ~' + perWeek.toFixed(1) + '/wk', color: 'var(--red)' };
+  }
+
+  function addReading() {
+    var sys = parseInt(state.form.systolic, 10);
+    var dia = parseInt(state.form.diastolic, 10);
+    var pulse = state.form.pulse ? parseInt(state.form.pulse, 10) : null;
+    if (!sys || !dia || sys < 50 || sys > 260 || dia < 30 || dia > 200) {
+      state.error = 'Enter a valid systolic (50–260) and diastolic (30–200) number.';
+      render();
+      return;
+    }
+    state.error = '';
+    state.readings.unshift({
+      id: Date.now() + '-' + Math.random().toString(36).slice(2, 7),
+      timestamp: Date.now(),
+      systolic: sys, diastolic: dia, pulse: pulse,
+      slot: state.form.slot, note: state.form.note.trim()
+    });
+    state.readings.sort(function (a, b) { return b.timestamp - a.timestamp; });
+    save();
+    state.form = { systolic: '', diastolic: '', pulse: '', slot: state.form.slot, note: '' };
+    state.showForm = false;
+    render();
+  }
+  function deleteReading(id) {
+    state.readings = state.readings.filter(function (r) { return r.id !== id; });
+    save();
+    render();
+  }
+  function clearAll() {
+    if (confirm('Delete all readings? This cannot be undone.')) {
+      state.readings = [];
+      save();
+      render();
+    }
+  }
+
+  function startOfWeek(ts) {
+    var d = new Date(ts);
+    d.setHours(0, 0, 0, 0);
+    var day = d.getDay(); // 0 = Sun .. 6 = Sat
+    var diff = day === 0 ? -6 : 1 - day; // shift back to Monday
+    d.setDate(d.getDate() + diff);
+    return d;
+  }
+
+  function groupReadings(readings, mode) {
+    var todayStr = new Date().toDateString();
+    var map = {};
+    readings.forEach(function (r) {
+      var key, label, sortTs;
+      if (mode === 'week') {
+        var ws = startOfWeek(r.timestamp);
+        key = 'w-' + ws.toDateString();
+        label = 'Week of ' + (ws.getMonth() + 1) + '/' + ws.getDate() + '/' + ws.getFullYear();
+        sortTs = ws.getTime();
+      } else if (mode === 'month') {
+        var d = new Date(r.timestamp);
+        key = 'm-' + d.getFullYear() + '-' + d.getMonth();
+        label = d.toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
+        sortTs = new Date(d.getFullYear(), d.getMonth(), 1).getTime();
+      } else {
+        var dd = new Date(r.timestamp);
+        key = 'd-' + dd.toDateString();
+        label = dd.toDateString() === todayStr ? 'Today' : fmtDate(r.timestamp);
+        sortTs = new Date(dd.getFullYear(), dd.getMonth(), dd.getDate()).getTime();
+      }
+      if (!map[key]) map[key] = { key: key, label: label, items: [], sortTs: sortTs };
+      map[key].items.push(r);
+    });
+    return Object.keys(map).map(function (k) {
+      map[k].items.sort(function (a, b) { return b.timestamp - a.timestamp; });
+      return map[k];
+    }).sort(function (a, b) { return b.sortTs - a.sortTs; });
+  }
+
+  function buildChartSVG(data) {
+    var w = 300, h = 200, padL = 30, padR = 10, padT = 10, padB = 24;
+    var innerW = w - padL - padR, innerH = h - padT - padB;
+    var allVals = [];
+    data.forEach(function (d) {
+      allVals.push(d.systolic, d.diastolic);
+      if (d.pulse) allVals.push(d.pulse);
+    });
+    var min = Math.min.apply(null, allVals) - 10;
+    var max = Math.max.apply(null, allVals) + 10;
+    function x(i) { return data.length <= 1 ? padL + innerW / 2 : padL + (i / (data.length - 1)) * innerW; }
+    function y(v) { return padT + innerH - ((v - min) / (max - min)) * innerH; }
+    function pathFor(key) {
+      var pts = [];
+      data.forEach(function (d, i) {
+        if (d[key] == null) return;
+        pts.push(x(i) + ',' + y(d[key]));
+      });
+      return pts.join(' ');
+    }
+    var gridLines = '';
+    for (var g = 0; g <= 3; g++) {
+      var gy = padT + (innerH / 3) * g;
+      gridLines += '<line x1="' + padL + '" y1="' + gy + '" x2="' + (w - padR) + '" y2="' + gy + '" stroke="#E7E3DA" stroke-width="1"/>';
+    }
+    var hasPulse = data.some(function (d) { return d.pulse; });
+    var svg = '<svg viewBox="0 0 ' + w + ' ' + h + '" width="100%" style="display:block">' +
+      gridLines +
+      '<polyline points="' + pathFor('systolic') + '" fill="none" stroke="#B5533C" stroke-width="2"/>' +
+      '<polyline points="' + pathFor('diastolic') + '" fill="none" stroke="#3D7068" stroke-width="2"/>' +
+      (hasPulse ? '<polyline points="' + pathFor('pulse') + '" fill="none" stroke="#8A6FB0" stroke-width="2" stroke-dasharray="4 3"/>' : '') +
+      '</svg>';
+    return svg;
+  }
+
+  function render() {
+    var app = document.getElementById('app');
+    var today = new Date().toDateString();
+    var todays = state.readings.filter(function (r) { return new Date(r.timestamp).toDateString() === today; });
+    var latest = state.readings[0];
+
+    var html = '';
+    html += '<header class="top"><div class="eyebrow">Today, ' + new Date().toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' }) + '</div><h1>Pressure Log</h1></header>';
+
+    if (latest) {
+      var cat = categorize(latest.systolic, latest.diastolic);
+      html += '<div class="hero">' +
+        '<div class="hero-top"><div>' +
+        '<div class="hero-num">' + latest.systolic + '<span class="slash">/</span>' + latest.diastolic + '</div>' +
+        '<div class="hero-sub">mmHg' + (latest.pulse ? ' · ' + latest.pulse + ' bpm' : '') + ' · ' + fmtTime(latest.timestamp) + ', ' + fmtDate(latest.timestamp) + '</div>' +
+        (latest.note ? '<div class="hero-note">' + esc(latest.note) + '</div>' : '') +
+        '</div>' +
+        '<div class="pill" style="background:' + cat.color + '"><div class="lab">' + cat.label + '</div><div class="sub">' + cat.sub + '</div></div>' +
+        '</div>' +
+        '<div class="hero-foot"><span>' + todays.length + ' of ' + state.target + ' readings today</span><div class="dots">' +
+        Array.from({ length: Math.max(state.target, todays.length) }).map(function (_, i) {
+          return '<span class="dot' + (i < todays.length ? ' on' : '') + '"></span>';
+        }).join('') + '</div></div>' +
+        '</div>';
+    } else {
+      html += '<div class="empty-hero">No readings yet. Log your first one to start tracking.</div>';
+    }
+
+    html += '<nav class="tabs">' + ['log', 'trend', 'settings'].map(function (t) {
+      return '<button class="tab' + (state.view === t ? ' active' : '') + '" data-view="' + t + '">' + (t === 'log' ? 'Log' : t === 'trend' ? 'Trends' : 'Settings') + '</button>';
+    }).join('') + '</nav>';
+
+    html += '<main>';
+
+    if (state.view === 'log') {
+      html += '<div class="range-row">' + [['day', 'Day'], ['week', 'Week'], ['month', 'Month']].map(function (m) {
+        return '<button class="range-btn' + (state.groupMode === m[0] ? ' active' : '') + '" data-group="' + m[0] + '">' + m[1] + '</button>';
+      }).join('') + '</div>';
+
+      var groups = groupReadings(state.readings, state.groupMode);
+      if (groups.length === 0) {
+        html += '<div class="empty-state">Tap the button below to add your first blood pressure reading.</div>';
+      }
+      groups.forEach(function (g, idx) {
+        var expanded = state.expandedGroups[g.key] !== false;
+        html += '<div class="day-group"><div class="day-label" data-group-key="' + esc(g.key) + '">' +
+          '<span>' + esc(g.label) + (state.groupMode !== 'day' ? ' <span class="count-badge">(' + g.items.length + ')</span>' : '') + '</span>' +
+          '<span class="chevron">' + (expanded ? '▲' : '▼') + '</span>' +
+          '</div>';
+        if (expanded) {
+          g.items.forEach(function (r) {
+            var c = categorize(r.systolic, r.diastolic);
+            html += '<div class="row"><div class="row-dot" style="background:' + c.color + '"></div>' +
+              '<div class="row-info"><div class="row-main"><span class="row-nums">' + r.systolic + '/' + r.diastolic + '</span><span class="row-slot">' + esc(r.slot) + '</span></div>' +
+              '<div class="row-meta">' + fmtTime(r.timestamp) + (r.pulse ? ' · ' + r.pulse + ' bpm' : '') + '</div>' +
+              (r.note ? '<div class="row-note">' + esc(r.note) + '</div>' : '') +
+              '</div><button class="del-btn" data-del="' + r.id + '">✕</button></div>';
+          });
+        }
+        html += '</div>';
+      });
+    }
+
+    if (state.view === 'trend') {
+      html += '<div class="range-row">' + [7, 14, 30, 90].map(function (d) {
+        return '<button class="range-btn' + (state.range === d ? ' active' : '') + '" data-range="' + d + '">' + d + 'd</button>';
+      }).join('') + '</div>';
+
+      var cutoff = Date.now() - state.range * 86400000;
+      var trendData = state.readings.filter(function (r) { return r.timestamp >= cutoff; }).sort(function (a, b) { return a.timestamp - b.timestamp; });
+
+      if (trendData.length === 0) {
+        html += '<div class="empty-state">Not enough data yet for this range.</div>';
+      } else {
+        var sysVals = trendData.map(function (r) { return r.systolic; });
+        var diaVals = trendData.map(function (r) { return r.diastolic; });
+        var pulseVals = trendData.filter(function (r) { return r.pulse; }).map(function (r) { return r.pulse; });
+        var avgSys = Math.round(sysVals.reduce(function (a, b) { return a + b; }, 0) / sysVals.length);
+        var avgDia = Math.round(diaVals.reduce(function (a, b) { return a + b; }, 0) / diaVals.length);
+        var avgPulse = pulseVals.length ? Math.round(pulseVals.reduce(function (a, b) { return a + b; }, 0) / pulseVals.length) : null;
+        var daysSpan = Math.max(1, (trendData[trendData.length - 1].timestamp - trendData[0].timestamp) / 86400000);
+        var perWeekFactor = (trendData.length / daysSpan) * 7;
+        var sysV = trendVerdict(slope(sysVals) * perWeekFactor);
+        var diaV = trendVerdict(slope(diaVals) * perWeekFactor);
+
+        html += '<div class="stats-grid">' +
+          '<div class="stat-card"><div class="stat-label">Avg systolic</div><div class="stat-value">' + avgSys + '</div><div class="stat-trend" style="color:' + sysV.color + '">' + sysV.text + '</div></div>' +
+          '<div class="stat-card"><div class="stat-label">Avg diastolic</div><div class="stat-value">' + avgDia + '</div><div class="stat-trend" style="color:' + diaV.color + '">' + diaV.text + '</div></div>';
+        if (avgPulse !== null) {
+          var pulseV = trendVerdict(slope(pulseVals) * perWeekFactor);
+          html += '<div class="stat-card"><div class="stat-label">Avg pulse</div><div class="stat-value">' + avgPulse + '</div><div class="stat-trend" style="color:' + pulseV.color + '">' + pulseV.text + '</div></div>';
+        }
+        html += '</div>';
+
+        html += '<div class="chart-card">' + buildChartSVG(trendData) +
+          '<div class="legend"><span class="legend-item"><i class="legend-dot" style="background:#B5533C"></i>Systolic</span>' +
+          '<span class="legend-item"><i class="legend-dot" style="background:#3D7068"></i>Diastolic</span>' +
+          (avgPulse !== null ? '<span class="legend-item"><i class="legend-dot" style="background:#8A6FB0"></i>Pulse</span>' : '') +
+          '</div></div>';
+
+        html += '<div class="note-card">Reference only, not medical advice: colors follow the same 4-tier scale as most home monitors — Green (good), Yellow (elevated), Orange (high), Red (very high) — based on your systolic and diastolic together. Talk to a doctor about what\'s right for you.</div>';
+      }
+    }
+
+    if (state.view === 'settings') {
+      html += '<div class="settings-card">' +
+        '<div class="setting-label">Daily reading target</div>' +
+        '<div class="setting-hint">How many times a day you plan to check — shown as progress dots. Log more or fewer any day; this is just a guide.</div>' +
+        '<div class="stepper"><button class="stepper-btn" id="dec">−</button><div class="stepper-val">' + state.target + '</div><button class="stepper-btn" id="inc">+</button></div>' +
+        '<div class="setting-label">Data</div>' +
+        '<div class="setting-hint">' + state.readings.length + ' readings saved on this device. Data stays only on this phone/browser — it is not backed up anywhere else.</div>' +
+        '<div class="settings-actions"><button class="btn-secondary" id="exportBtn">Download CSV</button><button class="btn-secondary" id="emailBtn">Email CSV</button><button class="btn-danger" id="clearBtn">Delete all</button></div>' +
+        '</div>';
+    }
+
+    html += '</main>';
+
+    if (state.error) {
+      html += '<div class="error-banner show">' + esc(state.error) + '</div>';
+    }
+
+    html += '<button class="fab" id="fab">+</button>';
+
+    html += '<div class="overlay' + (state.showForm ? ' show' : '') + '" id="overlay">' +
+      '<div class="sheet"><div class="sheet-handle"></div><div class="sheet-title">New reading</div>' +
+      '<div class="form-row">' +
+      '<div class="form-field"><label class="form-label">Systolic</label><input class="form-input" id="f-sys" type="number" inputmode="numeric" placeholder="120" value="' + esc(state.form.systolic) + '"></div>' +
+      '<div class="form-field"><label class="form-label">Diastolic</label><input class="form-input" id="f-dia" type="number" inputmode="numeric" placeholder="80" value="' + esc(state.form.diastolic) + '"></div>' +
+      '<div class="form-field"><label class="form-label">Pulse</label><input class="form-input" id="f-pulse" type="number" inputmode="numeric" placeholder="—" value="' + esc(state.form.pulse) + '"></div>' +
+      '</div>' +
+      '<label class="form-label">When</label><div class="slot-row">' + SLOTS.map(function (s) {
+        return '<button class="slot-btn' + (state.form.slot === s ? ' active' : '') + '" data-slot="' + s + '">' + s + '</button>';
+      }).join('') + '</div>' +
+      '<label class="form-label">Note (optional)</label><input class="form-input" id="f-note" type="text" placeholder="e.g. after lunch, after workout" maxlength="60" value="' + esc(state.form.note) + '">' +
+      '<button class="save-btn" id="saveBtn">Save reading</button>' +
+      '<button class="cancel-btn" id="cancelBtn">Cancel</button>' +
+      '</div></div>';
+
+    app.innerHTML = html;
+    wireEvents();
+  }
+
+  function wireEvents() {
+    document.querySelectorAll('.tab').forEach(function (el) {
+      el.onclick = function () { state.view = el.getAttribute('data-view'); render(); };
+    });
+    document.querySelectorAll('.range-btn[data-range]').forEach(function (el) {
+      el.onclick = function () { state.range = parseInt(el.getAttribute('data-range'), 10); render(); };
+    });
+    document.querySelectorAll('.range-btn[data-group]').forEach(function (el) {
+      el.onclick = function () { state.groupMode = el.getAttribute('data-group'); render(); };
+    });
+    document.querySelectorAll('.day-label[data-group-key]').forEach(function (el) {
+      el.onclick = function () {
+        var key = el.getAttribute('data-group-key');
+        state.expandedGroups[key] = state.expandedGroups[key] === false ? true : false;
+        render();
+      };
+    });
+    document.querySelectorAll('.del-btn').forEach(function (el) {
+      el.onclick = function () { deleteReading(el.getAttribute('data-del')); };
+    });
+    document.querySelectorAll('.slot-btn').forEach(function (el) {
+      el.onclick = function () { state.form.slot = el.getAttribute('data-slot'); render(); };
+    });
+    var fab = document.getElementById('fab');
+    if (fab) fab.onclick = function () { state.showForm = true; render(); focusFirst(); };
+    var overlay = document.getElementById('overlay');
+    if (overlay) overlay.onclick = function (e) { if (e.target === overlay) { state.showForm = false; render(); } };
+    var cancelBtn = document.getElementById('cancelBtn');
+    if (cancelBtn) cancelBtn.onclick = function () { state.showForm = false; render(); };
+    var saveBtn = document.getElementById('saveBtn');
+    if (saveBtn) saveBtn.onclick = function () { readForm(); addReading(); };
+    var dec = document.getElementById('dec');
+    if (dec) dec.onclick = function () { state.target = Math.max(1, state.target - 1); saveTarget(); render(); };
+    var inc = document.getElementById('inc');
+    if (inc) inc.onclick = function () { state.target = Math.min(8, state.target + 1); saveTarget(); render(); };
+    var clearBtn = document.getElementById('clearBtn');
+    if (clearBtn) clearBtn.onclick = clearAll;
+    var exportBtn = document.getElementById('exportBtn');
+    if (exportBtn) exportBtn.onclick = exportData;
+    var emailBtn = document.getElementById('emailBtn');
+    if (emailBtn) emailBtn.onclick = emailCSV;
+
+    ['f-sys', 'f-dia', 'f-pulse', 'f-note'].forEach(function (id) {
+      var el = document.getElementById(id);
+      if (el) el.oninput = function () { readForm(); };
+    });
+
+    var sheet = document.querySelector('.sheet');
+    if (sheet) sheet.onclick = function (e) { e.stopPropagation(); };
+  }
+
+  function readForm() {
+    var sys = document.getElementById('f-sys');
+    var dia = document.getElementById('f-dia');
+    var pulse = document.getElementById('f-pulse');
+    var note = document.getElementById('f-note');
+    if (sys) state.form.systolic = sys.value;
+    if (dia) state.form.diastolic = dia.value;
+    if (pulse) state.form.pulse = pulse.value;
+    if (note) state.form.note = note.value;
+  }
+
+  function focusFirst() {
+    setTimeout(function () {
+      var el = document.getElementById('f-sys');
+      if (el) el.focus();
+    }, 50);
+  }
+
+  function buildCSV() {
+    var lines = ['Date, Time, Systolic, Diastolic, Pulse, When, Note'];
+    state.readings.slice().sort(function (a, b) { return a.timestamp - b.timestamp; }).forEach(function (r) {
+      lines.push([fmtDate(r.timestamp), fmtTime(r.timestamp), r.systolic, r.diastolic, r.pulse || '', r.slot, (r.note || '').replace(/,/g, ';')].join(', '));
+    });
+    return lines.join('\n');
+  }
+
+  function exportData() {
+    var blob = new Blob([buildCSV()], { type: 'text/csv' });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url;
+    a.download = 'blood-pressure-log.csv';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+
+  function emailCSV() {
+    if (state.readings.length === 0) {
+      state.error = 'No readings to email yet.';
+      render();
+      return;
+    }
+    var csv = buildCSV();
+    // Preferred path on iPhone: hand the actual CSV file to the system share sheet,
+    // so picking Mail attaches it as a real file instead of pasting text into the body.
+    if (navigator.share) {
+      try {
+        var file = new File([csv], 'blood-pressure-log.csv', { type: 'text/csv' });
+        if (!navigator.canShare || navigator.canShare({ files: [file] })) {
+          navigator.share({ files: [file], title: 'Blood Pressure Log' }).catch(function () {});
+          return;
+        }
+      } catch (e) { /* fall through to mailto */ }
+    }
+    // Fallback for browsers without file sharing: open a draft email with the
+    // data pasted into the body (fine for shorter logs; very long logs may be truncated
+    // by the mail app — use Download CSV + attach manually for those).
+    var body = encodeURIComponent(csv);
+    var subject = encodeURIComponent('Blood Pressure Log');
+    window.location.href = 'mailto:?subject=' + subject + '&body=' + body;
+  }
+
+  render();
+})();
+</script>
+</body>
+</html>
