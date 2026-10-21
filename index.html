@@ -124,7 +124,7 @@
 (function () {
   var STORAGE_KEY = 'bp_readings_v1';
   var TARGET_KEY = 'bp_target_v1';
-  var SLOTS = ['Morning', 'Midday', 'Evening', 'Night'];
+  var SLOTS = ['Morning', 'Afternoon', 'Evening', 'Night'];
 
   var state = {
     readings: JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'),
